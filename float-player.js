@@ -36,7 +36,7 @@ export default class FloatPlayer {
       '--fp-bg': '#1a1a1a',
       '--fp-color': '#ccc',
       '--fp-radius': '8px',
-      '--fp-width': '340px',
+      '--fp-width': 'min(340px, calc(100vw - 32px))',
       '--fp-shadow': '0 4px 24px rgba(0,0,0,.5)',
     }
     Object.entries({ ...defaults, ...this.theme }).forEach(([k, v]) => el.style.setProperty(k, v))
@@ -44,8 +44,8 @@ export default class FloatPlayer {
     el.innerHTML = `
       <div class="yt-float-handle" style="padding:8px 12px;background:var(--fp-bg);cursor:grab;display:flex;align-items:center;gap:8px;">
         <span style="font-size:13px;color:var(--fp-color);font-family:sans-serif;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">▶ Video</span>
-        <button class="yt-float-minimize" aria-label="Minimize" style="background:none;border:none;color:var(--fp-color);font-size:13px;cursor:pointer;padding:0 4px;line-height:1;opacity:.7;">▼</button>
-        <button class="yt-float-close" aria-label="Close" style="background:none;border:none;color:var(--fp-color);font-size:16px;cursor:pointer;padding:0 4px;line-height:1;opacity:.7;">✕</button>
+        <button class="yt-float-minimize" aria-label="Minimize" style="background:none;border:none;color:var(--fp-color);font-size:13px;cursor:pointer;min-width:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center;opacity:.7;">▼</button>
+        <button class="yt-float-close" aria-label="Close" style="background:none;border:none;color:var(--fp-color);font-size:16px;cursor:pointer;min-width:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center;opacity:.7;">✕</button>
       </div>
       <iframe class="yt-float-iframe" allowfullscreen allow="autoplay; encrypted-media"
         style="width:100%;aspect-ratio:16/9;display:block;border:none;"></iframe>
