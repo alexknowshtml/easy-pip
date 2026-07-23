@@ -23,13 +23,14 @@ describe('construction', () => {
     const el = document.querySelector('.yt-float')
     expect(el.style.getPropertyValue('--fp-bg')).toBe('#1a1a1a')
     expect(el.style.getPropertyValue('--fp-width')).toBe('340px')
+    expect(el.style.getPropertyValue('--fp-aspect-ratio')).toBe('16/9')
   })
 
   it('applies theme overrides', () => {
-    new FloatPlayer({ theme: { '--fp-bg': '#fff', '--fp-width': '400px' } })
+    new FloatPlayer({ theme: { '--fp-bg': '#fff', '--fp-aspect-ratio': '4/1' } })
     const el = document.querySelector('.yt-float')
     expect(el.style.getPropertyValue('--fp-bg')).toBe('#fff')
-    expect(el.style.getPropertyValue('--fp-width')).toBe('400px')
+    expect(el.style.getPropertyValue('--fp-aspect-ratio')).toBe('4/1')
   })
 
   it('uses default padding', () => {
@@ -44,6 +45,11 @@ describe('construction', () => {
     const el = document.querySelector('.yt-float')
     expect(el.style.right).toBe('32px')
     expect(el.style.bottom).toBe('32px')
+  })
+
+  it('media container starts empty', () => {
+    new FloatPlayer()
+    expect(document.querySelector('.yt-float-media').children.length).toBe(0)
   })
 })
 
@@ -71,35 +77,48 @@ describe('trigger', () => {
   })
 })
 
-describe('open / close / toggle', () => {
+describe('open / close / toggle — video', () => {
   it('open() shows the widget', () => {
     const p = new FloatPlayer({ videoId: 'abc123' })
     p.open()
     expect(document.querySelector('.yt-float').style.display).toBe('block')
   })
 
+  it('open() mounts an iframe for YouTube videoId', () => {
+    const p = new FloatPlayer({ videoId: 'abc123' })
+    p.open()
+    expect(document.querySelector('.yt-float-media iframe')).not.toBeNull()
+    expect(document.querySelector('.yt-float-media audio')).toBeNull()
+  })
+
   it('open() builds YouTube embed src from videoId', () => {
     const p = new FloatPlayer({ videoId: 'abc123' })
     p.open()
-    expect(document.querySelector('.yt-float-iframe').src).toContain('youtube.com/embed/abc123')
+    expect(document.querySelector('.yt-float-media iframe').src).toContain('youtube.com/embed/abc123')
   })
 
   it('open() uses raw src for provider-agnostic URLs', () => {
     const p = new FloatPlayer({ src: 'https://player.vimeo.com/video/999?autoplay=1' })
     p.open()
-    expect(document.querySelector('.yt-float-iframe').src).toBe('https://player.vimeo.com/video/999?autoplay=1')
+    expect(document.querySelector('.yt-float-media iframe').src).toBe('https://player.vimeo.com/video/999?autoplay=1')
   })
 
   it('open(url) switches to src mode', () => {
     const p = new FloatPlayer({ videoId: 'abc123' })
     p.open('https://player.vimeo.com/video/999?autoplay=1')
-    expect(document.querySelector('.yt-float-iframe').src).toBe('https://player.vimeo.com/video/999?autoplay=1')
+    expect(document.querySelector('.yt-float-media iframe').src).toBe('https://player.vimeo.com/video/999?autoplay=1')
   })
 
   it('open(videoId) swaps videoId', () => {
     const p = new FloatPlayer({ videoId: 'abc123' })
     p.open('xyz789')
-    expect(document.querySelector('.yt-float-iframe').src).toContain('xyz789')
+    expect(document.querySelector('.yt-float-media iframe').src).toContain('xyz789')
+  })
+
+  it('handle label shows ▶ Video for video src', () => {
+    const p = new FloatPlayer({ videoId: 'abc123' })
+    p.open()
+    expect(document.querySelector('.yt-float-label').textContent).toBe('▶ Video')
   })
 
   it('close() hides the widget', () => {
@@ -113,7 +132,7 @@ describe('open / close / toggle', () => {
     const p = new FloatPlayer({ videoId: 'abc123' })
     p.open()
     p.close()
-    expect(document.querySelector('.yt-float-iframe').src).not.toContain('youtube.com')
+    expect(document.querySelector('.yt-float-media iframe').src).not.toContain('youtube.com')
   })
 
   it('toggle() opens when closed', () => {
@@ -130,20 +149,64 @@ describe('open / close / toggle', () => {
   })
 })
 
-describe('minimize', () => {
-  it('minimize() hides the iframe', () => {
-    const p = new FloatPlayer({ videoId: 'abc123' })
+describe('open / close — audio', () => {
+  it('open() mounts an <audio> element for .mp3 src', () => {
+    const p = new FloatPlayer({ src: 'https://example.com/track.mp3' })
     p.open()
-    p.minimize()
-    expect(document.querySelector('.yt-float-iframe').style.display).toBe('none')
+    expect(document.querySelector('.yt-float-media audio')).not.toBeNull()
+    expect(document.querySelector('.yt-float-media iframe')).toBeNull()
   })
 
-  it('minimize() twice restores iframe', () => {
+  it('open() mounts an <audio> element for .m4a src', () => {
+    const p = new FloatPlayer({ src: 'https://example.com/memo.m4a' })
+    p.open()
+    expect(document.querySelector('.yt-float-media audio')).not.toBeNull()
+  })
+
+  it('open() sets audio src', () => {
+    const p = new FloatPlayer({ src: 'https://example.com/track.mp3' })
+    p.open()
+    expect(document.querySelector('.yt-float-media audio').src).toBe('https://example.com/track.mp3')
+  })
+
+  it('handle label shows ♪ Audio for audio src', () => {
+    const p = new FloatPlayer({ src: 'https://example.com/track.mp3' })
+    p.open()
+    expect(document.querySelector('.yt-float-label').textContent).toBe('♪ Audio')
+  })
+
+  it('switching from video to audio replaces the iframe with audio element', () => {
+    const p = new FloatPlayer({ videoId: 'abc123' })
+    p.open()
+    expect(document.querySelector('.yt-float-media iframe')).not.toBeNull()
+    p.open('https://example.com/track.mp3')
+    expect(document.querySelector('.yt-float-media audio')).not.toBeNull()
+    expect(document.querySelector('.yt-float-media iframe')).toBeNull()
+  })
+
+  it('switching from audio to video replaces audio element with iframe', () => {
+    const p = new FloatPlayer({ src: 'https://example.com/track.mp3' })
+    p.open()
+    p.open('abc123')
+    expect(document.querySelector('.yt-float-media iframe')).not.toBeNull()
+    expect(document.querySelector('.yt-float-media audio')).toBeNull()
+  })
+})
+
+describe('minimize', () => {
+  it('minimize() hides the media element', () => {
+    const p = new FloatPlayer({ videoId: 'abc123' })
+    p.open()
+    p.minimize()
+    expect(document.querySelector('.yt-float-media iframe').style.display).toBe('none')
+  })
+
+  it('minimize() twice restores media element', () => {
     const p = new FloatPlayer({ videoId: 'abc123' })
     p.open()
     p.minimize()
     p.minimize()
-    expect(document.querySelector('.yt-float-iframe').style.display).toBe('block')
+    expect(document.querySelector('.yt-float-media iframe').style.display).toBe('block')
   })
 
   it('minimize button label toggles', () => {
@@ -162,7 +225,7 @@ describe('minimize', () => {
     p.open()
     p.minimize()
     p.open()
-    expect(document.querySelector('.yt-float-iframe').style.display).toBe('block')
+    expect(document.querySelector('.yt-float-media iframe').style.display).toBe('block')
   })
 
   it('close() resets minimize state so next open is not minimized', () => {
@@ -171,7 +234,7 @@ describe('minimize', () => {
     p.minimize()
     p.close()
     p.open()
-    expect(document.querySelector('.yt-float-iframe').style.display).toBe('block')
+    expect(document.querySelector('.yt-float-media iframe').style.display).toBe('block')
   })
 })
 

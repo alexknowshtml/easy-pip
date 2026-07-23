@@ -17,7 +17,8 @@ export default class FloatPlayer {
     this._dragging = false
     this._dragOffset = { x: 0, y: 0 }
     this._el = null
-    this._iframe = null
+    this._mediaContainer = null
+    this._mediaEl = null
     this._build()
     this._bindTrigger(trigger)
   }
@@ -26,6 +27,40 @@ export default class FloatPlayer {
     if (this.src) return this.src
     if (this.videoId) return `https://www.youtube.com/embed/${this.videoId}?autoplay=1`
     return null
+  }
+
+  _isAudioSrc(src) {
+    return /\.(mp3|m4a|ogg|wav|flac)(\?|$)/i.test(src)
+  }
+
+  _ensureMedia(isAudio) {
+    const needed = isAudio ? 'AUDIO' : 'IFRAME'
+    if (this._mediaEl && this._mediaEl.tagName === needed) return
+    this._mediaContainer.innerHTML = ''
+    if (isAudio) {
+      const audio = document.createElement('audio')
+      audio.controls = true
+      Object.assign(audio.style, {
+        width: '100%',
+        display: 'block',
+        padding: '12px',
+        boxSizing: 'border-box',
+      })
+      this._mediaContainer.appendChild(audio)
+      this._mediaEl = audio
+    } else {
+      const iframe = document.createElement('iframe')
+      iframe.allowFullscreen = true
+      iframe.allow = 'autoplay; encrypted-media'
+      Object.assign(iframe.style, {
+        width: '100%',
+        display: 'block',
+        border: 'none',
+        aspectRatio: 'var(--fp-aspect-ratio, 16/9)',
+      })
+      this._mediaContainer.appendChild(iframe)
+      this._mediaEl = iframe
+    }
   }
 
   _build() {
@@ -38,17 +73,17 @@ export default class FloatPlayer {
       '--fp-radius': '8px',
       '--fp-width': '340px',
       '--fp-shadow': '0 4px 24px rgba(0,0,0,.5)',
+      '--fp-aspect-ratio': '16/9',
     }
     Object.entries({ ...defaults, ...this.theme }).forEach(([k, v]) => el.style.setProperty(k, v))
 
     el.innerHTML = `
       <div class="yt-float-handle" style="padding:8px 12px;background:var(--fp-bg);cursor:grab;display:flex;align-items:center;gap:8px;">
-        <span style="font-size:13px;color:var(--fp-color);font-family:sans-serif;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">▶ Video</span>
+        <span class="yt-float-label" style="font-size:13px;color:var(--fp-color);font-family:sans-serif;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">▶ Video</span>
         <button class="yt-float-minimize" aria-label="Minimize" style="background:none;border:none;color:var(--fp-color);font-size:13px;cursor:pointer;padding:0 4px;line-height:1;opacity:.7;">▼</button>
         <button class="yt-float-close" aria-label="Close" style="background:none;border:none;color:var(--fp-color);font-size:16px;cursor:pointer;padding:0 4px;line-height:1;opacity:.7;">✕</button>
       </div>
-      <iframe class="yt-float-iframe" allowfullscreen allow="autoplay; encrypted-media"
-        style="width:100%;aspect-ratio:16/9;display:block;border:none;"></iframe>
+      <div class="yt-float-media"></div>
     `
 
     Object.assign(el.style, {
@@ -66,7 +101,7 @@ export default class FloatPlayer {
 
     document.body.appendChild(el)
     this._el = el
-    this._iframe = el.querySelector('.yt-float-iframe')
+    this._mediaContainer = el.querySelector('.yt-float-media')
 
     el.querySelector('.yt-float-close').addEventListener('click', () => this.close())
     el.querySelector('.yt-float-minimize').addEventListener('click', () => this.minimize())
@@ -95,7 +130,7 @@ export default class FloatPlayer {
       const cy = e.touches ? e.touches[0].clientY : e.clientY
       this._dragOffset = { x: cx - rect.left, y: cy - rect.top }
       Object.assign(this._el.style, { left: rect.left + 'px', top: rect.top + 'px', right: 'auto', bottom: 'auto' })
-      this._iframe.style.pointerEvents = 'none'
+      if (this._mediaEl) this._mediaEl.style.pointerEvents = 'none'
       handle.style.cursor = 'grabbing'
       this._dragging = true
     }
@@ -115,7 +150,7 @@ export default class FloatPlayer {
     const onEnd = () => {
       if (!this._dragging) return
       this._dragging = false
-      this._iframe.style.pointerEvents = ''
+      if (this._mediaEl) this._mediaEl.style.pointerEvents = ''
       handle.style.cursor = 'grab'
       if (this.snapEnabled) this._snapToCorner()
     }
@@ -152,7 +187,13 @@ export default class FloatPlayer {
       }
     }
     const resolved = this._resolvedSrc()
-    if (resolved) this._iframe.src = resolved
+    if (resolved) {
+      const isAudio = this._isAudioSrc(resolved)
+      this._ensureMedia(isAudio)
+      this._mediaEl.src = resolved
+      const label = this._el.querySelector('.yt-float-label')
+      if (label) label.textContent = isAudio ? '♪ Audio' : '▶ Video'
+    }
     if (this._minimized) this.minimize()
     this._el.style.display = 'block'
     this._open = true
@@ -160,11 +201,14 @@ export default class FloatPlayer {
 
   close() {
     this._el.style.display = 'none'
-    this._iframe.src = ''
+    if (this._mediaEl) {
+      if (this._mediaEl.tagName === 'AUDIO') this._mediaEl.pause()
+      this._mediaEl.src = ''
+    }
     this._open = false
     if (this._minimized) {
       this._minimized = false
-      this._iframe.style.display = 'block'
+      if (this._mediaEl) this._mediaEl.style.display = 'block'
       const btn = this._el.querySelector('.yt-float-minimize')
       btn.textContent = '▼'
       btn.setAttribute('aria-label', 'Minimize')
@@ -173,10 +217,14 @@ export default class FloatPlayer {
 
   minimize() {
     this._minimized = !this._minimized
-    this._iframe.style.display = this._minimized ? 'none' : 'block'
+    if (this._mediaEl) this._mediaEl.style.display = this._minimized ? 'none' : 'block'
     const btn = this._el.querySelector('.yt-float-minimize')
     btn.textContent = this._minimized ? '▲' : '▼'
     btn.setAttribute('aria-label', this._minimized ? 'Expand' : 'Minimize')
+  }
+
+  setTheme(vars) {
+    Object.entries(vars).forEach(([k, v]) => this._el.style.setProperty(k, v))
   }
 
   toggle(videoIdOrSrc) {
