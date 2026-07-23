@@ -1,0 +1,17 @@
+{
+  "name": "easy-pip",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Draggable, snap-to-corner floating video widget. Zero dependencies.",
+  "main": "float-player.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.0",
+    "vitest": "^2.0.0"
+  },
+  "license": "MIT"
+}
