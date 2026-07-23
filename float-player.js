@@ -41,11 +41,29 @@ export default class FloatPlayer {
     }
     Object.entries({ ...defaults, ...this.theme }).forEach(([k, v]) => el.style.setProperty(k, v))
 
+    if (!document.getElementById('yt-float-styles')) {
+      const style = document.createElement('style')
+      style.id = 'yt-float-styles'
+      style.textContent = `
+        .yt-float-close, .yt-float-minimize {
+          -webkit-tap-highlight-color: transparent;
+          border-radius: 4px;
+          transition: background .12s, opacity .12s;
+        }
+        .yt-float-close:hover, .yt-float-minimize:hover,
+        .yt-float-close:active, .yt-float-minimize:active {
+          background: rgba(255,255,255,.12) !important;
+          opacity: 1 !important;
+        }
+      `
+      document.head.appendChild(style)
+    }
+
     el.innerHTML = `
-      <div class="yt-float-handle" style="padding:8px 12px;background:var(--fp-bg);cursor:grab;display:flex;align-items:center;gap:8px;">
+      <div class="yt-float-handle" style="padding:6px 8px 6px 12px;background:var(--fp-bg);cursor:grab;display:flex;align-items:center;gap:4px;">
         <span style="font-size:13px;color:var(--fp-color);font-family:sans-serif;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">▶ Video</span>
-        <button class="yt-float-minimize" aria-label="Minimize" style="background:none;border:none;color:var(--fp-color);font-size:13px;cursor:pointer;min-width:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center;opacity:.7;">▼</button>
-        <button class="yt-float-close" aria-label="Close" style="background:none;border:none;color:var(--fp-color);font-size:16px;cursor:pointer;min-width:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center;opacity:.7;">✕</button>
+        <button class="yt-float-minimize" aria-label="Minimize" style="background:rgba(255,255,255,.06);border:none;color:var(--fp-color);font-size:13px;cursor:pointer;min-width:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;opacity:.85;border-radius:4px;">▼</button>
+        <button class="yt-float-close" aria-label="Close" style="background:rgba(255,255,255,.06);border:none;color:var(--fp-color);font-size:15px;cursor:pointer;min-width:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;opacity:.85;border-radius:4px;">✕</button>
       </div>
       <iframe class="yt-float-iframe" allowfullscreen allow="autoplay; encrypted-media"
         style="width:100%;aspect-ratio:16/9;display:block;border:none;"></iframe>
