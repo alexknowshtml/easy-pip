@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FloatPlayer Demo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      padding: 40px 20px;
+    }
+    h1 { font-size: 1.5rem; font-weight: 600; }
+    p { font-size: 0.95rem; color: #888; max-width: 480px; text-align: center; line-height: 1.6; }
+    .demo-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+    }
+    button {
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 20px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    button:hover { background: #2a2a2a; }
+    button.primary {
+      background: #ff0000;
+      border-color: #ff0000;
+      color: #fff;
+    }
+    button.primary:hover { background: #cc0000; }
+    code {
+      display: block;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 20px 24px;
+      font-size: 13px;
+      font-family: 'Menlo', 'Consolas', monospace;
+      color: #a8d8a8;
+      max-width: 520px;
+      white-space: pre;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>FloatPlayer</h1>
+  <p>A draggable, snap-to-corner floating video widget. Zero dependencies. ~155 lines.</p>
+
+  <div class="demo-controls">
+    <button id="btn-rickroll" class="primary">▶ Watch Video</button>
+    <button id="btn-swap">Swap Video</button>
+    <button id="btn-destroy">Destroy</button>
+    <button id="btn-rebuild">Rebuild</button>
+  </div>
+
+  <code>import FloatPlayer from './float-player.js'
+
+const player = new FloatPlayer({
+  videoId: 'dQw4w9WgXcQ',
+  trigger: '#btn-rickroll',
+  padding: 16,
+  snap: true,
+})</code>
+
+  <script type="module">
+    import FloatPlayer from './float-player.js'
+
+    let player = makePlayer()
+
+    function makePlayer() {
+      return new FloatPlayer({
+        videoId: 'dQw4w9WgXcQ',
+        trigger: '#btn-rickroll',
+        padding: 16,
+        snap: true,
+      })
+    }
+
+    document.getElementById('btn-swap').addEventListener('click', () => {
+      // Big Buck Bunny trailer
+      player.open('aqz-KE-bpKQ')
+    })
+
+    document.getElementById('btn-destroy').addEventListener('click', () => {
+      player.destroy()
+    })
+
+    document.getElementById('btn-rebuild').addEventListener('click', () => {
+      player.destroy()
+      player = makePlayer()
+    })
+  </script>
+</body>
+</html>
